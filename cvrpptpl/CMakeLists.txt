@@ -10,8 +10,9 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # Gather all source files
 file(GLOB_RECURSE PROBLEM_SOURCES src/problem/*.cpp)
+file(GLOB_RECURSE HEURISTIC_SOURCES src/heuristic/*.cpp)
 
 # Add the main executable
-add_executable(cvrpptpl "main.cpp" ${PROBLEM_SOURCES})
+add_executable(cvrpptpl "main.cpp" ${PROBLEM_SOURCES} ${HEURISTIC_SOURCES})
 
 # TODO: Add tests and install targets

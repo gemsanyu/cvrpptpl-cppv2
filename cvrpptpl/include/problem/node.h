@@ -1,9 +1,10 @@
 #pragma once
+#include <array>
 
-class Node {
-  int idx;
-  float coord[2];
-
-public:
+struct Node {
+  
+  const int idx;
+  std::array<float, 2> coord;
+  
   Node(int index, float x, float y);
 };

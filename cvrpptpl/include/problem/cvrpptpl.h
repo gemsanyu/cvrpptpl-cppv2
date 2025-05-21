@@ -9,20 +9,32 @@
 
 using AllNodeType = std::variant<Node, Customer, Locker, MrtLine>;
 
-class Cvrpptpl {
+struct Cvrpptpl {
   const Node depot;
-  std::vector<const Customer> customers;
-  std::vector<const Locker> lockers;
-  std::vector<const MrtLine> mrtLines;
-  std::vector<const AllNodeType> nodes;
+  std::vector<Customer> customers;
+  std::vector<Locker> lockers;
+  std::vector<MrtLine> mrtLines;
+  std::vector<AllNodeType> nodes;
 
   std::vector<std::vector<float>> distanceMatrix;
   std::vector<int> demands;
   std::vector<int> serviceTimes;
+  std::vector<int> lockerCapacities;
+  std::vector<float> lockerCosts;
+  std::vector<float> mrtLineCosts;
+  std::vector<int> mrtLineCapacities;
+  std::vector<int> incomingMrtLineIdxs;
+  std::vector<std::array<int, 2>> mrtStationIdxs;
+  std::vector<std::vector<int>> destinationAlternatives;
   int numNodes;
 
+  std::vector<bool> isCustomer;
+  std::vector<bool> isHdCustomer;
+  std::vector<bool> isSpCustomer;
+  std::vector<bool> isFxCustomer;
+  std::vector<bool> isLocker;
+  std::vector<bool> isMrtLine;
 
-public:
   Cvrpptpl(const Node& depot, const std::vector<Customer>& customers,
     const std::vector<Locker>& lockers, const std::vector<MrtLine>& mrtLines,
     std::vector<std::vector<float>>& distanceMatrixOrig);

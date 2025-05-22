@@ -3,12 +3,14 @@
 #include "problem/mrt_line.h"
 #include "problem/node.h"
 
+#include <fstream>
 #include <ranges>
 
 Cvrpptpl::Cvrpptpl(const Node& depot, const std::vector<Customer>& customers,
   const std::vector<Locker>& lockers, const std::vector<MrtLine>& mrtLines, 
+  const std::vector<Vehicle>& vehicles,
   std::vector<std::vector<float>>& distanceMatrixOrig)
-  : depot(depot), customers(customers), lockers(lockers), mrtLines(mrtLines) {
+  : depot(depot), customers(customers), lockers(lockers), mrtLines(mrtLines), vehicles(vehicles) {
   nodes.push_back(depot);
   for (auto& customer : customers) {
     nodes.push_back(customer);
@@ -38,6 +40,11 @@ Cvrpptpl::Cvrpptpl(const Node& depot, const std::vector<Customer>& customers,
     for (int j = 0; j < numNodes; j++) {
       distanceMatrix[i][j] = distanceMatrix[mrtStartStationIdx][j];
     }
+  }
+
+  numVehicles = vehicles.size();
+  for (int vi = 0; vi < numVehicles; vi++) {
+    vehicleCapacities.push_back(vehicles[vi].capacity);
   }
 
   for (int i = 0; i<numNodes; i++) {
@@ -87,5 +94,33 @@ Cvrpptpl::Cvrpptpl(const Node& depot, const std::vector<Customer>& customers,
     mrtLineCapacities[i] = mrtLine.freightCapacity;
     int endStationIdx = mrtLine.endStation.idx;
     incomingMrtLineIdxs[endStationIdx] = mi;
+  }
+}
+
+
+Cvrpptpl readProblem(fs::path filepath) {
+  std::ifstream file(filepath);
+  if (!file) {
+    std::cerr << "Could not open file: " << filepath << std::endl;
+    return;
+  }
+  std::vector<Customer> customers;
+  std::vector<Locker> lockers;
+  std::vector<MrtLine> mrtLines;
+  std::vector<Vehicle> vehicles;
+
+
+  std::string line;
+  int li = 0;
+  for (int li=0;li<)
+  while (std::getline(file, line)) {
+    if (li <= 1) {
+      li++;
+      continue;
+    }
+    if (line == "depot") {
+
+    }
+    std::cout << line << std::endl;  // Do something with line
   }
 }

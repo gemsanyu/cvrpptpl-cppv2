@@ -8,4 +8,6 @@ Customer::Customer(int index, float x, float y, int serviceTime, int demand,
   demand(demand), 
   isSelfPickup(isSelfPickup), 
   isFlexible(isFlexible), 
-  lockerPreferenceIdxs(lockerPreferenceIdxs) {}
+  lockerPreferenceIdxs(lockerPreferenceIdxs) {
+    isHomeDelivery = !(isFlexible || isSelfPickup);
+}

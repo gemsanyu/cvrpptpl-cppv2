@@ -6,6 +6,7 @@
 struct Customer : Node {
   int serviceTime;
   int demand;
+  bool isHomeDelivery;
   bool isSelfPickup;
   bool isFlexible;
   std::vector<int> lockerPreferenceIdxs;

@@ -24,7 +24,6 @@ struct Cvrpptpl {
   std::vector<int> demands;
   std::vector<int> serviceTimes;
   std::vector<int> lockerCapacities;
-  std::vector<float> lockerCosts;
   std::vector<float> mrtLineCosts;
   std::vector<int> mrtLineCapacities;
   std::vector<int> incomingMrtLineIdxs;

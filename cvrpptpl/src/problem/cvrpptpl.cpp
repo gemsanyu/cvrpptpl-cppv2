@@ -4,7 +4,9 @@
 #include "problem/node.h"
 
 #include <fstream>
+#include <iostream>
 #include <ranges>
+#include <span>
 
 Cvrpptpl::Cvrpptpl(const Node& depot, const std::vector<Customer>& customers,
   const std::vector<Locker>& lockers, const std::vector<MrtLine>& mrtLines, 
@@ -26,22 +28,7 @@ Cvrpptpl::Cvrpptpl(const Node& depot, const std::vector<Customer>& customers,
     mrtStationIdxs.push_back(stationIdxs);
   }
 
-  for (int i = 0; i < nodes.size(); i++) {
-    for (int j = 0; j < nodes.size(); j++) {
-      distanceMatrix[i][j] = distanceMatrixOrig[i][j];
-    }
-    for (int j = nodes.size(); j < numNodes; j++) {
-      int mrtStartStationIdx = mrtLines[j - nodes.size()].startStation.idx;
-      distanceMatrix[i][j] = distanceMatrixOrig[i][mrtStartStationIdx];
-    }
-  }
-  for (int i = nodes.size(); i < numNodes; i++) {
-    int mrtStartStationIdx = mrtLines[i - nodes.size()].startStation.idx;
-    for (int j = 0; j < numNodes; j++) {
-      distanceMatrix[i][j] = distanceMatrix[mrtStartStationIdx][j];
-    }
-  }
-
+  distanceMatrix = distanceMatrixOrig;
   numVehicles = vehicles.size();
   for (int vi = 0; vi < numVehicles; vi++) {
     vehicleCapacities.push_back(vehicles[vi].capacity);
@@ -51,7 +38,6 @@ Cvrpptpl::Cvrpptpl(const Node& depot, const std::vector<Customer>& customers,
     demands.push_back(0);
     serviceTimes.push_back(0);
     lockerCapacities.push_back(0);
-    lockerCosts.push_back(0);
     mrtLineCosts.push_back(0);
     mrtLineCapacities.push_back(0);
     destinationAlternatives.push_back({});
@@ -83,12 +69,11 @@ Cvrpptpl::Cvrpptpl(const Node& depot, const std::vector<Customer>& customers,
     isLocker[locker.idx] = true;
     serviceTimes[locker.idx] = locker.serviceTime;
     lockerCapacities[locker.idx] = locker.capacity;
-    lockerCosts[locker.idx] = locker.cost;
   }
 
   for (int mi = 0; mi < mrtLines.size(); mi++) {
     auto& mrtLine = mrtLines[mi];
-    int i = mi + nodes.size();
+    int i = mi + int(nodes.size());
     isMrtLine[i] = true;
     mrtLineCosts[i] = mrtLine.cost;
     mrtLineCapacities[i] = mrtLine.freightCapacity;
@@ -97,30 +82,161 @@ Cvrpptpl::Cvrpptpl(const Node& depot, const std::vector<Customer>& customers,
   }
 }
 
+std::vector<std::string> splitString(std::string line, char sep) {
+  std::vector<std::string> tokens;
+  for (auto token : std::views::split(line, sep)) {
+    tokens.push_back(std::string(token.begin(), token.end()));
+  }
+  return tokens;
+}
 
 Cvrpptpl readProblem(fs::path filepath) {
   std::ifstream file(filepath);
+  std::cout << "Working dir: " << fs::current_path() << std::endl;
   if (!file) {
     std::cerr << "Could not open file: " << filepath << std::endl;
-    return;
+    throw std::runtime_error("Could not open file");
   }
   std::vector<Customer> customers;
   std::vector<Locker> lockers;
   std::vector<MrtLine> mrtLines;
   std::vector<Vehicle> vehicles;
+  std::vector<std::vector<float>> distanceMatrix;
 
 
   std::string line;
-  int li = 0;
-  for (int li=0;li<)
+  std::vector<std::string> lines;
   while (std::getline(file, line)) {
-    if (li <= 1) {
-      li++;
-      continue;
-    }
-    if (line == "depot") {
-
-    }
-    std::cout << line << std::endl;  // Do something with line
+    lines.push_back(line);
   }
+  std::size_t li = 2;
+  line = lines[li];
+  while (line != "depot") {
+    auto tokens = splitString(line, ',');
+    Vehicle new_vehicle = Vehicle(std::stoi(tokens[0]), std::stoi(tokens[1]), std::stof(tokens[2]));
+    vehicles.push_back(new_vehicle);
+    li++;
+    line = lines[li];
+  }
+  li += 2;
+  line = lines[li];
+  auto tokens = splitString(line, ',');
+  Node depot = Node(0, std::stof(tokens[1]), std::stof(tokens[2]));
+  li += 3;
+  line = lines[li];
+  while (line != "self pickup customers") {
+    auto tokens = splitString(line, ',');
+    Customer customer = Customer(std::stoi(tokens[0]),
+      std::stof(tokens[1]),
+      std::stof(tokens[2]),
+      std::stoi(tokens[3]),
+      std::stoi(tokens[4]),
+      false,
+      false,
+      std::vector<int>{}
+    );
+    customers.push_back(customer);
+    li++;
+    line = lines[li];
+  }
+
+  li += 2;
+  line = lines[li];
+  while (line != "flexible customers") {
+    auto tokens = splitString(line, ',');
+    auto lockerPreferredIdxStr = splitString(tokens[5], '-');
+    std::vector<int> lockerPrerredIdxs;
+    for (auto& lpiStr : lockerPreferredIdxStr) {
+      lockerPrerredIdxs.push_back(std::stoi(lpiStr));
+    }
+    Customer customer = Customer(std::stoi(tokens[0]),
+      std::stof(tokens[1]),
+      std::stof(tokens[2]),
+      std::stoi(tokens[3]),
+      std::stoi(tokens[4]),
+      true,
+      false,
+      lockerPrerredIdxs
+    );
+    customers.push_back(customer);
+    li++;
+    line = lines[li];
+  }
+
+  li += 2;
+  line = lines[li];
+  while (line != "lockers") {
+    auto tokens = splitString(line, ',');
+    auto lockerPreferredIdxStr = splitString(tokens[5], '-');
+    std::vector<int> lockerPrerredIdxs;
+    for (auto& lpiStr : lockerPreferredIdxStr) {
+      lockerPrerredIdxs.push_back(std::stoi(lpiStr));
+    }
+    Customer customer = Customer(std::stoi(tokens[0]),
+      std::stof(tokens[1]),
+      std::stof(tokens[2]),
+      std::stoi(tokens[3]),
+      std::stoi(tokens[4]),
+      false,
+      true,
+      lockerPrerredIdxs
+    );
+    customers.push_back(customer);
+    li++;
+    line = lines[li];
+  }
+  auto numCustoners = customers.size();
+  li += 2;
+  line = lines[li];
+  while (line != "mrt lines") {
+    auto tokens = splitString(line, ',');
+    Locker locker = Locker(std::stoi(tokens[0]),
+      std::stof(tokens[1]),
+      std::stof(tokens[2]),
+      std::stoi(tokens[3]),
+      std::stoi(tokens[4]));
+    lockers.push_back(locker);
+    li++;
+    line = lines[li];
+  }
+
+  li += 2;
+  line = lines[li];
+  while (line != "distance matrix") {
+    auto tokens = splitString(line, ',');
+    int startIdx = std::stoi(tokens[0]);
+    int endIdx = std::stoi(tokens[1]);
+    const auto startStation = lockers[startIdx - numCustoners - 1];
+    const auto endStation = lockers[endIdx - numCustoners - 1];
+    MrtLine mrtLine = MrtLine(
+      startStation,
+      endStation,
+      10,
+      std::stof(tokens[2]),
+      std::stoi(tokens[3])
+    );
+    mrtLines.push_back(mrtLine);
+    li++;
+    line = lines[li];
+  }
+  
+  li += 2;
+  line = lines[li];
+  while (li<lines.size()) {
+    if (line.length() < 2) {
+      break;
+    }
+    auto tokens = splitString(line, ',');
+    std::vector<float> distanceRow;
+    for (auto token : std::span(tokens).subspan(1)) {
+      distanceRow.push_back(std::stof(token));
+    }
+    distanceMatrix.push_back(distanceRow);
+    li++;
+    if (li < lines.size()) {
+      line = lines[li];
+    }
+  }
+  Cvrpptpl problem = Cvrpptpl(depot, customers, lockers, mrtLines, vehicles, distanceMatrix);
+  return problem;
 }

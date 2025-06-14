@@ -1,7 +1,9 @@
 ﻿cmake_minimum_required(VERSION 3.12)
 project(cvrpptpl LANGUAGES CXX)
 
-# Set C++ standard
+enable_testing()
+find_package(GTest CONFIG REQUIRED)
+# Set C++ standard 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -12,7 +14,10 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 file(GLOB_RECURSE PROBLEM_SOURCES src/problem/*.cpp)
 file(GLOB_RECURSE HEURISTIC_SOURCES src/heuristic/*.cpp)
 
-# Add the main executable
-add_executable(cvrpptpl "main.cpp" ${PROBLEM_SOURCES} ${HEURISTIC_SOURCES})
+add_library(cvrpptpl_lib ${PROBLEM_SOURCES} ${HEURISTIC_SOURCES})
 
-# TODO: Add tests and install targets
+# Add the main executable
+add_executable(cvrpptpl "main.cpp")
+target_link_libraries(cvrpptpl PRIVATE cvrpptpl_lib)
+
+add_subdirectory(tests)

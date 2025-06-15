@@ -2,6 +2,8 @@
 //
 #include <iostream>
 #include "problem/cvrpptpl.h"
+#include "heuristic/solution.h"
+#include "heuristic/greedy_initialization.h"
 
 int main(int argc, char* argv[])
 {
@@ -11,6 +13,14 @@ int main(int argc, char* argv[])
 	}*/
 	//std::string filepath = argv[1];
 	std::string filepath = "instances/A-n11-k3-m1-b3.txt";
-	//auto problem = readProblem(filepath);
+	auto problem = readProblem(filepath);
+	auto solution = greedyInitialization(problem);
+	for (auto& route : solution.routes) {
+		for (int nodeIdx : route) {
+			std::cout << nodeIdx << " ";
+		}
+		std::cout << "\n";
+	}
+	std::cout << solution.isFeasible(problem) << "\n";
 	return 0;
 }

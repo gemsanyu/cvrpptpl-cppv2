@@ -11,59 +11,49 @@
 Cvrpptpl::Cvrpptpl(const Node& depot, const std::vector<Customer>& customers,
   const std::vector<Locker>& lockers, const std::vector<MrtLine>& mrtLines, 
   const std::vector<Vehicle>& vehicles,
-  std::vector<std::vector<float>>& distanceMatrixOrig)
+  std::vector<std::vector<double>>& distanceMatrixOrig)
   : depot(depot), customers(customers), lockers(lockers), mrtLines(mrtLines), vehicles(vehicles) {
   nodes.push_back(depot);
   for (auto& customer : customers) {
     nodes.push_back(customer);
   }
+  numCustomers = int(customers.size());
   for (auto& locker: lockers) {
     nodes.push_back(locker);
   }
-  numNodes = nodes.size()+mrtLines.size();
-
-  for (std::size_t mi = 0; mi < mrtLines.size(); mi++) {
-    std::array<int, 2> stationIdxs = {mrtLines[mi].startStation.idx,
-                                      mrtLines[mi].endStation.idx};
-    mrtStationIdxs.push_back(stationIdxs);
-  }
+  numLockers = int(lockers.size());
+  numNodes = int(nodes.size());
 
   distanceMatrix = distanceMatrixOrig;
-  numVehicles = vehicles.size();
+  numVehicles = int(vehicles.size());
   for (int vi = 0; vi < numVehicles; vi++) {
     vehicleCapacities.push_back(vehicles[vi].capacity);
+    vehicleCosts.push_back(vehicles[vi].cost);
   }
-
-  for (int i = 0; i<numNodes; i++) {
-    demands.push_back(0);
-    serviceTimes.push_back(0);
-    lockerCapacities.push_back(0);
-    mrtLineCosts.push_back(0);
-    mrtLineCapacities.push_back(0);
-    destinationAlternatives.push_back({});
-    incomingMrtLineIdxs.push_back(-1);
-    isCustomer.push_back(false);
-    isHdCustomer.push_back(false);
-    isSpCustomer.push_back(false);
-    isFxCustomer.push_back(false);
-    isLocker.push_back(false);
-    isMrtLine.push_back(false);
-  }
+  demands.resize(numNodes, 0);
+  serviceTimes.resize(numNodes, 0);
+  lockerCapacities.resize(numNodes, 0);
+  destinationAlternatives.resize(numNodes, {});
+  incomingMrtLineIdxs.resize(numNodes, NO_MRT_LINE);
+  isCustomer.resize(numNodes, false);
+  isHdCustomer.resize(numNodes, false);
+  isSpCustomer.resize(numNodes, false);
+  isFxCustomer.resize(numNodes, false);
+  isLocker.resize(numNodes, false);
   for (auto& customer : customers) {
     demands[customer.idx] = customer.demand;
     serviceTimes[customer.idx] = customer.serviceTime;
     isCustomer[customer.idx] = true;
-    if (customer.isSelfPickup) {
-      isSpCustomer[customer.idx] = true;
-    } else if (customer.isFlexible) {
-      isFxCustomer[customer.idx] = true;
-    } else {
-      isHdCustomer[customer.idx] = true;
+    isSpCustomer[customer.idx] = customer.isSelfPickup;
+    isFxCustomer[customer.idx] = customer.isFlexible;
+    isHdCustomer[customer.idx] = customer.isHomeDelivery;
+    if (customer.isHomeDelivery || customer.isFlexible) {
+      destinationAlternatives[customer.idx].push_back(customer.idx);
     }
-    destinationAlternatives[customer.idx].push_back(customer.idx);
     for (int lockerIdx : customer.lockerPreferenceIdxs) {
       destinationAlternatives[customer.idx].push_back(lockerIdx);
     }
+
   }
   for (auto& locker : lockers) {
     isLocker[locker.idx] = true;
@@ -71,18 +61,26 @@ Cvrpptpl::Cvrpptpl(const Node& depot, const std::vector<Customer>& customers,
     lockerCapacities[locker.idx] = locker.capacity;
   }
 
-  for (int mi = 0; mi < mrtLines.size(); mi++) {
+  numMrtLines = int(mrtLines.size());
+  mrtLineCosts.resize(numMrtLines, 0);
+  mrtLineCapacities.resize(numMrtLines, 0);
+
+  for (int mi = 0; mi< numMrtLines; mi++) {
     auto& mrtLine = mrtLines[mi];
-    int i = mi + int(nodes.size());
-    isMrtLine[i] = true;
-    mrtLineCosts[i] = mrtLine.cost;
-    mrtLineCapacities[i] = mrtLine.freightCapacity;
+    mrtLineCosts[mi] = mrtLine.cost;
+    mrtLineCapacities[mi] = mrtLine.freightCapacity;
     int endStationIdx = mrtLine.endStation.idx;
     incomingMrtLineIdxs[endStationIdx] = mi;
   }
+
+  for (std::size_t mi = 0; mi < mrtLines.size(); mi++) {
+    std::array<int, 2> stationIdxs = { mrtLines[mi].startStation.idx,
+                                      mrtLines[mi].endStation.idx };
+    mrtStationIdxs.push_back(stationIdxs);
+  }
 }
 
-std::vector<std::string> splitString(std::string line, char sep) {
+static std::vector<std::string> splitString(std::string line, char sep) {
   std::vector<std::string> tokens;
   for (auto token : std::views::split(line, sep)) {
     tokens.push_back(std::string(token.begin(), token.end()));
@@ -101,7 +99,7 @@ Cvrpptpl readProblem(fs::path filepath) {
   std::vector<Locker> lockers;
   std::vector<MrtLine> mrtLines;
   std::vector<Vehicle> vehicles;
-  std::vector<std::vector<float>> distanceMatrix;
+  std::vector<std::vector<double>> distanceMatrix;
 
 
   std::string line;
@@ -206,8 +204,8 @@ Cvrpptpl readProblem(fs::path filepath) {
     auto tokens = splitString(line, ',');
     int startIdx = std::stoi(tokens[0]);
     int endIdx = std::stoi(tokens[1]);
-    const auto startStation = lockers[startIdx - numCustoners - 1];
-    const auto endStation = lockers[endIdx - numCustoners - 1];
+    const auto& startStation = lockers[startIdx - numCustoners - 1];
+    const auto& endStation = lockers[endIdx - numCustoners - 1];
     MrtLine mrtLine = MrtLine(
       startStation,
       endStation,
@@ -227,8 +225,8 @@ Cvrpptpl readProblem(fs::path filepath) {
       break;
     }
     auto tokens = splitString(line, ',');
-    std::vector<float> distanceRow;
-    for (auto token : std::span(tokens).subspan(1)) {
+    std::vector<double> distanceRow;
+    for (auto& token : std::span(tokens).subspan(1)) {
       distanceRow.push_back(std::stof(token));
     }
     distanceMatrix.push_back(distanceRow);

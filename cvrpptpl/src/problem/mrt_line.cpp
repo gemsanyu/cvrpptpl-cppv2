@@ -3,7 +3,7 @@
 
 
 MrtLine::MrtLine(const Locker& startStation, const Locker& endStation,
-  int startStationServiceTime, float cost, int freightCapacity)
+  int startStationServiceTime, double cost, int freightCapacity)
   : startStation(startStation),
     endStation(endStation),
     startStationServiceTime(startStationServiceTime),

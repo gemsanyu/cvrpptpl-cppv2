@@ -7,7 +7,7 @@
 const int NO_DESTINATION = -1;
 const int NO_VEHICLE = -2;
 
-class Solution {
+struct Solution {
 public:
   std::vector<std::vector<int>> routes;
   std::vector<int> packageDestinations;
@@ -16,12 +16,14 @@ public:
   std::vector<int> lockerLoads;
   std::vector<int> destinationVehicleAssignments;
   std::vector<int> mrtLoads;
+  std::vector<bool> isNodeVisited;
+  std::vector<bool> isMrtLineUsed;
 
-  std::vector<float> lockerCharges;
-  std::vector<float> vehicleCharges;
-  std::vector<float> mrtCharges;
-  float totalCost;
+  std::vector<double> vehicleCharges;
+  std::vector<double> mrtCharges;
+  double totalCost;
 
   Solution(const Cvrpptpl& problem);
   Solution(const Solution& other);
+  bool isFeasible(const Cvrpptpl& problem);
 };

@@ -4,7 +4,7 @@
 struct Node {
   
   const int idx;
-  std::array<float, 2> coord;
+  std::array<double, 2> coord;
   
-  Node(int index, float x, float y);
+  Node(int index, double x, double y);
 };

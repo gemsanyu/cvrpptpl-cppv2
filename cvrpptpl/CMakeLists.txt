@@ -15,7 +15,7 @@ file(GLOB_RECURSE PROBLEM_SOURCES src/problem/*.cpp)
 file(GLOB_RECURSE HEURISTIC_SOURCES src/heuristic/*.cpp)
 
 add_library(cvrpptpl_lib ${PROBLEM_SOURCES} ${HEURISTIC_SOURCES})
-
+ 
 # Add the main executable
 add_executable(cvrpptpl "main.cpp")
 target_link_libraries(cvrpptpl PRIVATE cvrpptpl_lib)

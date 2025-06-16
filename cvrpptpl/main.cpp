@@ -4,6 +4,7 @@
 #include "problem/cvrpptpl.h"
 #include "heuristic/solution.h"
 #include "heuristic/greedy_initialization.h"
+#include "heuristic/destroy_operator_l1.h"
 
 int main(int argc, char* argv[])
 {
@@ -22,5 +23,8 @@ int main(int argc, char* argv[])
 		std::cout << "\n";
 	}
 	std::cout << solution.isFeasible(problem) << "\n";
+
+	auto destroyOp = RandomDestinationRemoval(2, 5);
+	auto status = destroyOp.apply(problem, solution);
 	return 0;
 }

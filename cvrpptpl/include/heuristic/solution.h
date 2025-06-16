@@ -26,4 +26,5 @@ public:
   Solution(const Cvrpptpl& problem);
   Solution(const Solution& other);
   bool isFeasible(const Cvrpptpl& problem);
+  bool isValid(const Cvrpptpl& problem);
 };

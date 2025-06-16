@@ -93,6 +93,7 @@ bool Solution::isFeasible(const Cvrpptpl& problem)
   }
 
   auto& distanceMatrix = problem.distanceMatrix;
+  double totalActualVehicleCharge = 0;
   for (int vi = 0; vi < routes.size(); vi++) {
     auto& route = routes[vi];
     double actualVehicleCharge = 0;
@@ -104,8 +105,10 @@ bool Solution::isFeasible(const Cvrpptpl& problem)
       std::cout << "Vehicle charge computation is incorrect " << vi << " " << vehicleCharges[vi] << " " << actualVehicleCharge << " " << vehicleCharges[vi] - actualVehicleCharge<<"\n";
       return false;
     }
+    totalActualVehicleCharge += actualVehicleCharge;
   }
 
+  double totalActualMrtLineCharge = 0;
   for (int mi = 0; mi < problem.numMrtLines; mi++) {
     double actualMrtLineCharge = 0;
     if (isMrtLineUsed[mi]) {
@@ -121,8 +124,45 @@ bool Solution::isFeasible(const Cvrpptpl& problem)
       std::cout << "Incorrect computation of mrt line charge " << mi << " " << mi << " " << mrtCharges[mi] << " " << actualMrtLineCharge << "\n";
       return false;
     }
+    totalActualMrtLineCharge += actualMrtLineCharge;
   }
+
+  for (auto& customer : problem.customers) {
+    int custIdx = customer.idx;
+    if ((packageDestinations[custIdx] == custIdx) && (nodeVisitationCounts[custIdx] != 1)) {
+      std::cout << "Customer set to be home-delivered but not visited " << custIdx << "\n";
+      return false;
+    }
+    if ((packageDestinations[custIdx] != custIdx) && (nodeVisitationCounts[custIdx] > 0)) {
+      std::cout << "Customer set to be self-pickup but is visited " << custIdx << "\n";
+      return false;
+    }
+  }
+
+  if (!isClose(totalCost, totalActualVehicleCharge + totalActualMrtLineCharge)) {
+    std::cout << "Total cost computation is incorrect " << totalCost << " " << totalActualVehicleCharge + totalActualMrtLineCharge << "\n";
+    return false;
+  }
+
   
-  //TODO: continue adding constraints to check if a solution is feasible.
+  //Added constraint check:
+  // 1. check total demands == total vehicle loads
+  // 2. check all nodes visited max once
+  // 3. check depot only at the beginning or end of route
+  // 4. locker load == all customer assigned to it
+  // 5. correct computation of per vehicle charge
+  // 6. correct computation of mrt line charge
+  // 7. customers who chose to be home-delivery must be visited once.
+  // 8. customers who chose to self-pickup must not be visited.
+  // 9. total cost valid
+  // TODO add more when you think of something..
+  return true;
+}
+
+
+
+bool Solution::isValid(const Cvrpptpl& problem)
+{
+  //TODO: add this, this is a more relaxed verision of isFeasible, useful for checking operators.
   return true;
 }
